@@ -1,0 +1,1307 @@
+= NotesMongoDB
+:Author: Gabriele Puliti
+:Email: gabriele.puliti@gmail.com
+:Date: 26/06/2019
+:Revision: 0.1.0
+
+== Introduction
+
+MongoDB enforces no schemas, so Documents don't have to use the same schema inside of one collection.
+
+*But* it recommended to Use some sort of schemas to prevent missusing of the Documents.
+
+== Install
+
+TIP: https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/#install-mongodb-community-edition-using-deb-packages[Install Mongo on Ubuntu]
+
+TIP: https://www.mongodb.com/download-center/community[MongoDB server community edition]
+
+To test if the database are installed you can check by running:
+
+[source,bash]
+----
+mongod --version
+----
+
+== Start database
+
+By default uses /data/db as the storage path, if follow this standard
+you can start database without any arguments. Run this on terminal:
+
+[source,bash]
+----
+mongod --dbpath "my/new/path"
+----
+
+or
+
+[source,bash]
+----
+mongod
+----
+
+WARNING: to run the mongodb server it's necessary the sudoers permissions
+
+To get all the help of mongod just run the --help:
+
+[source, bash]
+----
+mongod --help
+----
+
+.examples
+
+[source, bash]
+----
+mongod --dbpath ~/dbs/testDB --logpath ~/dbs/testLog/log.log
+----
+
+IMPORTANT: the log file is important to retrive infos that will be lost without it.
+
+[source, bash]
+----
+mongod --fork --logpath ~/dbs/testLog/log.log
+----
+
+This command above starts the process of mongod as a child process and run in background.
+
+To stop this instance of mongoDB it's necessary to use the admin db and run, here the list of command to run to stop it:
+
+.on mongo shell
+[source, mongo]
+----
+use admin
+db.shutdownServer()
+----
+
+=== Configuration of mongo database
+
+It's obviously possible to create a configuration file of the mongodb.
+
+For example I will create a configuration file inside the directory of the dbs in my home directory:
+
+.linux bash
+[source, bash]
+----
+mkdir -p ~/dbs/testDB/
+cd ~/dbs/testDB/
+touch mongod.cfg
+----
+
+Open this file and edit by follow this link: https://docs.mongodb.com/manual/reference/configuration-options/[configuration-options]
+
+This file look like this:
+
+[source, properties]
+----
+storage:
+    dbPath: /home/gab/dbs/testDB
+systemLog:
+    destination: file
+    path: /home/gab/dbs/testLogs/log.log
+----
+
+WARNING: The link of the path need to be absolute
+
+To use this file it's necessary to define in the arguments of the mongod command:
+
+[source, bash]
+----
+mongod --config ~/dbs/testDB/mongod.cfg
+----
+
+The configuration of mongo database can be usefull to define the portability of the application, you can transfer the configuration between server or pc.
+
+== Use mongo
+
+From another terminal run:
+
+[source,mongo]
+----
+mongo --port <port_where_database_are>
+----
+
+Example:
+
+[source,bash]
+----
+mongo --port 27018
+----
+
+== Database infos
+
+[source,mongo]
+----
+show dbs
+----
+
+== Create new database
+
+A Database holds multiple Collections where each Collection can then hold multiple Documents.
+
+[source,mongo]
+----
+use <name_of_new_database>
+----
+
+example:
+
+[source,mongo]
+----
+use shop
+----
+
+== Reset/Delete Database
+
+To get rid of the datas:
+
+* load the database get rid of:
++
+[source,mongo]
+----
+use databaseName
+----
+* execute:
++
+[source,mongo]
+----
+db.dropDatabase()
+----
+
+== To get help
+
+There are multiple help commands on the mongo shell, the general purpose one:
+
+[source, mongo]
+----
+help
+----
+
+The output should be this:
+
+[source,mongo]
+----
+	db.help()                    help on db methods
+	db.mycoll.help()             help on collection methods
+	sh.help()                    sharding helpers
+	rs.help()                    replica set helpers
+	help admin                   administrative help
+	help connect                 connecting to a db help
+	help keys                    key shortcuts
+	help misc                    misc things to know
+	help mr                      mapreduce
+
+	show dbs                     show database names
+	show collections             show collections in current database
+	show users                   show users in current database
+	show profile                 show most recent system.profile entries with time >= 1ms
+	show logs                    show the accessible logger names
+	show log [name]              prints out the last segment of log in memory, 'global' is default
+	use <db_name>                set current database
+	db.foo.find()                list objects in collection foo
+	db.foo.find( { a : 1 } )     list objects in foo where a == 1
+	it                           result of the last line evaluated; use to further iterate
+	DBQuery.shellBatchSize = x   set default number of items to display on shell
+	exit                         quit the mongo shell
+----
+
+== CRUD operations
+
+MongoDB offers multiples CRUD operations for single-document and bulk actions.
+Some methods require an argument and others don't.
+
+* Create:
++
+[source,mongo]
+----
+insertOne(data, options)
+----
++
+[source,mongo]
+----
+insertMany(data, options)
+----
+* Read:
++
+[source,mongo]
+----
+find(filter, options)
+----
++
+[source,mongo]
+----
+findOne(filter, options)
+----
+* Update:
++
+[source,mongo]
+----
+updateOne(filter, data, options)
+----
++
+[source,mongo]
+----
+updateMany(filter, data, options)
+----
++
+[source,mongo]
+----
+replaceOne(filter, data, options)
+----
+* Delete:
++
+[source,mongo]
+----
+deleteOne(filter, options)
+----
++
+[source,mongo]
+----
+deleteMany(filter, options)
+----
+
+== Insert datas to database
+
+MongoDB is schemaless so there are no restrictions to the type of data. It's possible to insert different schema of the same data, but this is not the best way to handle datas obviously.
+The most common way to use this database is to use a default type schema and let it free to add more keys.
+
+For example if we want to represent a product we can do with 3 different approches:
+
+[width="80%", option="header"]
+|=======================================================
+|Chaos | ------- | SQL world |
+| {
+"title" : "Book",
+"price": 12.99
+} | { "title" : "Book", "price": 12.99 } | { "title" : "Book", "price": 12.99 } |
+| { "title" : "Bottle", "available": true } | { "title" : "Bottle", "price": 12.99, "available": true } | { "title" : "Bottle", "price": 12.99 } |
+|=======================================================
+
+=== Insert one
+
+A Document can't directly be insered into a Database, you need to use a Colleciton.
+Each document needs a unique ID, if is not given the engine of mongo will create it for us.
+It's possible to have embedded docuemnts and array fields.
+
+[source,mongo]
+----
+db.<name_of_collection>.insertOne({"key0":value0, key1:value1})
+----
+
+The values type can be:
+
+* *Text* -> "Max"
+* *Number*
+** *Integer* (int32) -> 55
+** *NumberLong* (int64) -> 1000000000000000
+** *NumberDecimal* -> 12.99
+* *Boolean* -> true
+* *ObjectId* -> ObjectId("sfasd")
+* *ISODate* -> ISOData("2019-07-01")
+* *Timestamp* -> Timestamp(11421532)
+* *Embedded Document* -> {"a": {...} }
+* *Array* -> {"a": [...] }
+
+example:
+
+[source,mongo]
+----
+db.products.insertOne({
+    name: "computer",
+    price: 100.999,
+    description: "This is a high value product.",
+    details:{
+        cpu: "Intel i7",
+        "memory": "32",
+		stored: true
+    }
+})
+----
+
+[source,mongo]
+----
+db.companies.insertOne({
+	name: "Fresh Apples Inc",
+	isStartup: true,
+	emplyees: 33,
+	funding: 12345678901234567890,
+	details: {
+		ceo: "Gabriele Puliti",
+		tags: [
+			{title: "super"},
+			{title: "perfect"}
+		]
+	},
+	foundingData: new Date(),
+	insertedAt: new Timestamp()
+})
+----
+
+== Data Types & Limits
+
+MongoDB has a couple of hard limits - most importantly, a single document in a collection (including all embedded documents it might have) must be < = 16mb. Additionally, you may only have 100 levels of embedded documents.
+
+You can find all limits (in great detail) here: https://docs.mongodb.com/manual/reference/limits/[limits]
+
+For the data types, MongoDB supports, you find a detailed overview on this page: https://docs.mongodb.com/manual/reference/bson-types/[bson-types]
+
+Important data type limits are:
+
+* Normal integers (int32) can hold a maximum value of +-2,147,483,647
+
+* Long integers (int64) can hold a maximum value of +-9,223,372,036,854,775,807
+
+Text can be as long as you want - the limit is the 16mb restriction for the overall document.
+
+It's also important to understand the difference between int32 (NumberInt), int64 (NumberLong) and a normal number as you can enter it in the shell. The same goes for a normal double and NumberDecimal.
+
+* NumberInt creates a int32 value => NumberInt(55)
+
+* NumberLong creates a int64 value => NumberLong(7489729384792)
+
+If you just use a number (e.g. insertOne({a: 1}), this will get added as a normal double into the database. The reason for this is that the shell is based on JS which only knows float/ double values and doesn't differ between integers and floats.
+
+NumberDecimal creates a high-precision double value => NumberDecimal("12.99") => This can be helpful for cases where you need (many) exact decimal places for calculations.
+
+=== Insert many
+
+[source,mongo]
+----
+db.<name_of_collection>.insertMany([
+    {
+        "key0":"value0",
+        key1:"value1"
+    },
+    {
+        "key2":"value2",
+        key3:"value3"
+    }
+])
+----
+
+example:
+
+[source,mongo]
+----
+db.flightData.insertMany([
+    {
+        "departureAirport": "MUC",
+        "arrivalAirport": "SFO",
+        "aircraft": "Airbus A380",
+        "distance": 12000,
+        "intercontinental": true
+    },
+    {
+        "departureAirport": "LHR",
+        "arrivalAirport": "TXL",
+        "aircraft": "Airbus A320",
+        "distance": 950,
+        "intercontinental": false
+    }
+])
+----
+
+If one of the document already exists the method will throw an error and stop the creation of new documents. This beaviour can be change by using the option ordered:
+
+[source,mongo]
+----
+db.<name_of_collection>.insertMany([
+    {
+        "key0":"value0",
+        key1:"value1"
+    },
+    {
+        "key2":"value2",
+        key3:"value3"
+    }
+], {ordered: false})
+----
+
+The default value of this option is true, by set this value to false even if one of the document already exists in the collection the engine don't skip the insert of new data.
+
+Here an other examples;
+
+[source,mongo]
+----
+> db.hobbies.insertMany([
+	{_id: 'yoga', name: 'Yoga'},
+	{_id: 'cooking', name: 'Cooking'},
+	{_id: 'hiking', name: 'Hiking '}
+], {ordered: false})
+----
+
+== Retrive data from database
+
+=== Find
+
+CAUTION: The find method return a cursor and not a list of documents, because the documents retrive can be thousand and it's more easy to transfert over the net. It can be also possible to use filters to limit the number of documents retrive, or projection to limit the set of fields.
+
+[source,mongo]
+----
+db.<name_of_collection>.find(filters, options)
+----
+
+To beautify the results it can be use the pretty function:
+
+[source,mongo]
+----
+db.<name_of_collection>.find(filter, options).pretty()
+----
+
+example:
+
+[source,mongo]
+----
+db.products.find().pretty()
+----
+
+[source,mongo]
+----
+db.<name_of_collection>.find({intercontinental: true}).pretty()
+----
+
+[source,mongo]
+----
+db.flightData.find({distance:{$gt:100}}).pretty()
+----
+
+[source,mongo]
+----
+db.passengers.find().toArray()
+----
+
+[source,mongo]
+----
+db.passengers.find().forEach((passengerData) => {printjson(passengerData)})
+----
+
+The use of find below is called projection:
+
+[source,mongo]
+----
+db.passengers.find({}, {name:1}).pretty()
+----
+
+=== FindOne
+
+[source,mongo]
+----
+db.<name_of_collection>.findOne()
+----
+
+example:
+
+[source,mongo]
+----
+db.flightData.findOne({distance:{$gt:100}})
+----
+
+== Accessing structured datas
+
+=== E.G. 1
+
+[source,mongo]
+----
+db.passengers.findOne({name: "Albert Twostone"}).hobbies
+----
+
+Output:
+
+[source,mongo]
+----
+["sports", "cooking"]
+----
+
+=== E.G. 2
+
+[source,mongo]
+----
+db.flightData.find({"status.details.responsible": "Max Schwarzmuller"}).pretty()
+----
+
+Output:
+
+[source,json]
+----
+{
+    "_id" : ObjectId("5d09ef2276acd23a2e3fb02b"),
+    "departureAirport" : "MUC",
+    "arrivalAirport" : "SFO",
+    "aircraft" : "Airbus A380",
+    "distance" : 12000,
+    "intercontinental" : true,
+    "status" : {
+        "description" : "on-time",
+        "lastUpdated" : "1 hour ago",
+        "details" : {
+            "responsible" : "Max Schwarzmuller"
+        }
+    }
+}
+{
+    "_id" : ObjectId("5d09ef2276acd23a2e3fb02c"),
+    "departureAirport" : "LHR",
+    "arrivalAirport" : "TXL",
+    "aircraft" : "Airbus A320",
+    "distance" : 950,
+    "intercontinental" : false,
+    "status" : {
+        "description" : "on-time",
+        "lastUpdated" : "1 hour ago",
+        "details" : {
+            "responsible" : "Max Schwarzmuller"
+        }
+    }
+}
+----
+
+== Delete data from database
+
+[source,mongo]
+----
+db.<name_of_collection>.deleteOne({key_filter: value_filter})
+----
+
+example:
+
+[source,mongo]
+----
+db.fightData.deleteOne({departureAirport: "1"})
+----
+
+[source,mongo]
+----
+db.fightData.deleteMany({marker: "toDelete"})
+----
+
+[source,mongo]
+----
+db.fightData.deleteMany({})
+----
+
+== Drop collection
+
+[source,mongo]
+----
+db.<name_of_collection>.drop()
+----
+
+== Update data
+
+Be worry about the update function, the first one replace all the
+filtered data:
+
+[source,mongo]
+----
+db.<name_of_collection>.update(
+    {key_filter: value_filter},
+    {key_update: value_update}
+)
+----
+
+This second type of update need a option:
+
+[source,mongo]
+----
+db.<name_of_collection>.updateOne(
+    {key_filter: value_filter},
+    {$option: {key_update: value_update}}
+)
+----
+
+example:
+
+[source,mongo]
+----
+db.flightData.updateOne(
+    {departureAirport:"123"},
+    {$set:{marker: 'delete'}}
+)
+----
+
+[source,mongo]
+----
+db.flightData.updateMany(
+    {},
+    {$set: {
+        marker: 'toDelete'
+    }}
+)
+----
+
+[source,mongo]
+----
+db.flightData.update(
+    {"_id":ObjectId("5d09ef2276acd23a2e3fb02b")},
+    {delayed:false}
+)
+----
+
+== Replace Data
+
+[source,mongo]
+----
+db.<name_of_collection>.replaceOne(filter, options)
+----
+
+example:
+
+[source,mongo]
+----
+db.flightData.replaceOne(
+    {"_id": ObjectId("5d09ef2276acd23a2e3fb02b")},
+    {
+        "departureAirport": "MUC",
+        "arrivalAirport": "SFO",
+        "aircraft": "Airbus A380",
+        "distance": 12000,
+        "intercontinental": true
+    }
+)
+----
+
+== Nested documents
+
+[source,mongo]
+----
+db.flightData.updateMany(
+    {},
+    {$set: {
+        status: {
+            description: "on-time",
+            lastUpdated: "1 hour ago",
+            details: {
+                responsible: "Max Schwarzmuller"
+            }
+        }
+    }}
+)
+----
+
+== Embedded documents and max document value
+
+In MongoDB it’s possible to have at least 100 levels of nesting.
+Documents have a maximum size of 16MB.
+
+== Get informations about database
+
+To get infos about the database in use we need to use the stats method:
+
+[source, mongo]
+----
+db.stats()
+----
+
+The result will be something like this:
+
+[source, mongo]
+----
+{
+	"db" : "companyData",
+	"collections" : 2,
+	"views" : 0,
+	"objects" : 2,
+	"avgObjSize" : 136.5,
+	"dataSize" : 273,
+	"storageSize" : 32768,
+	"numExtents" : 0,
+	"indexes" : 2,
+	"indexSize" : 32768,
+	"fsUsedSize" : 49097785344,
+	"fsTotalSize" : 238644428800,
+	"ok" : 1
+}
+
+----
+
+With this method we can analize the usage of the memory for different type of data. Let's create a new empty databases and create a new collection with only one entry like this:
+
+[source, mongo]
+----
+db.number.insertOne({a: 1})
+----
+
+Now call the stats method of database and observe the dataSize value:
+
+[source, mongo]
+----
+{
+	"db" : "numbers",
+	"collections" : 1,
+	"views" : 0,
+	"objects" : 1,
+	"avgObjSize" : 33,
+	"dataSize" : 33,
+	"storageSize" : 16384,
+	"numExtents" : 0,
+	"indexes" : 1,
+	"indexSize" : 16384,
+	"fsUsedSize" : 49104764928,
+	"fsTotalSize" : 238644428800,
+	"ok" : 1
+}
+----
+
+The collection with only one int key is 33 bit. Now delete it with deleteMany({}) and create the same element but change the name of a:
+
+[source, mongo]
+----
+db.number.insertOne({a: NumberInt(1)})
+----
+
+Now the dataSize will be less:
+
+[source, mongo]
+----
+{
+	"db" : "companyData",
+	"collections" : 1,
+	"views" : 0,
+	"objects" : 1,
+	"avgObjSize" : 29,
+	"dataSize" : 29,
+	"storageSize" : 20480,
+	"numExtents" : 0,
+	"indexes" : 1,
+	"indexSize" : 20480,
+	"fsUsedSize" : 49092698112,
+	"fsTotalSize" : 238644428800,
+	"ok" : 1
+}
+----
+
+The default type of numbers using by mongo are 4 bit longer than the NumberInt type.
+
+== Mongo drivers
+
+All the infos can be found here: https://docs.mongodb.com/ecosystem/drivers/[drivers]
+
+== Variables
+
+In the mongo console it's possible to use variables with the same syntax of javascript:
+
+[source,mongo]
+----
+var <name_of_variable> = <query>
+----
+
+.example:
+
+[source,mongo]
+----
+db.patients.insertOne({name: "Nax", age: 29, diseaseSummary: "summary-max-1"})
+db.diseaseSummaries.insertOne({_id: "summary-max-1", "diseases: ["cold", "broken leg"]})
+var dsid = db.patients.findOne().diseaseSummary
+dsid
+----
+
+The output of the last command will be this:
+
+[source, mongo]
+----
+summary-max-1
+----
+
+Obviously it possible to use this variable inside queries:
+
+[source, mongo]
+----
+db.diseaseSummaries.findOne({_id: dsid})
+----
+
+== Joining with $lookup
+
+This is usefull when you have relationships between documents, for example you have a costumer with a reference to the favourite books:
+
+.books
+[source, json]
+----
+{
+	"_id" : ObjectId("5d1a0bbf0118327c0251e7a1"),
+	"name" : "My favourite Book",
+	"authors" : [
+		ObjectId("5d1a0a490118327c0251e79f"),
+		ObjectId("5d1a0a490118327c0251e7a0")
+	]
+}
+----
+
+.authors
+[source, json]
+----
+{
+	"_id" : ObjectId("5d1a0a490118327c0251e79f"),
+	"name" : "Max Schwarz",
+	"age" : 29,
+	"address" : {
+		"street" : "Main"
+	}
+}
+{
+	"_id" : ObjectId("5d1a0a490118327c0251e7a0"),
+	"name" : "Manuel Lore",
+	"age" : 30,
+	"address" : {
+		"street" : "Tree"
+	}
+}
+----
+
+The syntax of the aggregate method is:
+
+[source,mongo]
+----
+db.<name_of_document>.aggregate([{$lookup: {from: <external_document>, localField: <local_name_field>, foreignField: <name_of_foreign_key>, as: <alias>}}])
+----
+
+In our example:
+
+[source,mongo]
+----
+db.books.aggregate([{$lookup: {from: 'authors', localField: 'authors', foreignField: '_id', as: 'creators'}}]).pretty()
+----
+
+The output will be:
+
+[source,mongo]
+----
+{
+	"_id" : ObjectId("5d1a0bbf0118327c0251e7a1"),
+	"name" : "My favourite Book",
+	"authors" : [
+		ObjectId("5d1a0a490118327c0251e79f"),
+		ObjectId("5d1a0a490118327c0251e7a0")
+	],
+	"creators" : [
+		{
+			"_id" : ObjectId("5d1a0a490118327c0251e79f"),
+			"name" : "Max Schwarz",
+			"age" : 29,
+			"address" : {
+				"street" : "Main"
+			}
+		},
+		{
+			"_id" : ObjectId("5d1a0a490118327c0251e7a0"),
+			"name" : "Manuel Lore",
+			"age" : 30,
+			"address" : {
+				"street" : "Tree"
+			}
+		}
+	]
+}
+----
+
+== Validation
+
+https://docs.mongodb.com/manual/core/schema-validation/[docs validation]
+
+This is an important feature of mongoDB, this is used when we need to create schema of the datas.
+The schema validation of mongoDB is used when an application need a defined schema and we don't want to store useless data but data with defined structure.
+This operation is made by mongodb when a new data will be insert.
+
+The syntax of the creation this restrictions is made with the createCollection method:
+
+.It's more simple to present an example (this is refer to db of exercise 1)
+[source, mongo]
+----
+db.createCollection('posts', {
+	validator: {
+		$jsonSchema: {
+			bsonType: 'object',
+			required: ['title', 'text', 'creator', 'comments'],
+			properties: {
+				title: {
+					bsonType: 'string',
+					description: 'must be a string and is required'
+				},
+				text: {
+					bsonType: 'string',
+					description: 'must be a string and is required'
+				},
+				creator: {
+					bsonType: 'objectId',
+					description: 'must be a objectId and is required'
+				},
+				comments: {
+					bsonType: 'array',
+					description: 'must be an array and is required',
+					items: {
+						bsonType: 'object',
+						required: ['text', 'author'],
+						properties: {
+							text: {
+								bsonType: 'string',
+								description: 'must be a string and is required'
+							},
+							author: {
+								bsonType: 'objectId',
+								description: 'must be an obhectId and is required'
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+});
+----
+
+To replace a validation action it's necessary to use the database administrator method call runCommand:
+
+.for example we want to add a validation action warning
+[source, mongo]
+----
+db.runCommand({
+	collMod: 'posts',
+	validator: {
+		$jsonSchema: {
+			bsonType: 'object',
+			required: ['title', 'text', 'creator', 'comments'],
+			properties: {
+				title: {
+					bsonType: 'string',
+					description: 'must be a string and is required'
+				},
+				text: {
+					bsonType: 'string',
+					description: 'must be a string and is required'
+				},
+				creator: {
+					bsonType: 'objectId',
+					description: 'must be a objectId and is required'
+				},
+				comments: {
+					bsonType: 'array',
+					description: 'must be an array and is required',
+					items: {
+						bsonType: 'object',
+						required: ['text', 'author'],
+						properties: {
+							text: {
+								bsonType: 'string',
+								description: 'must be a string and is required'
+							},
+							author: {
+								bsonType: 'objectId',
+								description: 'must be an obhectId and is required'
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	validationAction: 'warn'
+});
+----
+This new option added don't prevent the insert of a wrong element but create a warning on the log file of the database.
+
+== Exploring datas graphically
+
+https://www.mongodb.com/download-center/compass[compass community software]
+
+== Exercises
+
+=== Exercise 0
+
+.*Introduction*
+Create a database of patients, every patient need to have this arguments:
+
+* firstName
+* lastName
+* age
+* history
+** disease
+** treatment
+
+.*Task*
+For this exercise the requests are:
+
+. Create database of patients and call it `patients`
+. Insert 3 patient records with at least 1 history entry per patient
+. Update patient data of 1 patient with new age, name and history entry
+. Find all patients who are older than 30 (or a value of your choice)
+. Delete all patients who got a cold as a disease
+
+.*Solution*
+The first thing to do is to set up the mongodb server using the terminal and run this command:
+
+[source,bash]
+----
+sudo mongod
+----
+
+Then open another terminal and run the mongo client with:
+
+[source,bash]
+----
+mongo
+----
+
+IMPORTANT: The mongo client don't need the root permission to write into the database
+
+Let's create the database of patients:
+
+[source,mongo]
+----
+use patients
+----
+
+Output:
+[source,mongo]
+----
+switched to db patients
+----
+
+NOTE: This solve the first request
+
+Now we can populate the DB with 3 patient:
+
+[source,mongo]
+----
+db.patient.insertMany([
+	{
+		"firstName": "Gabriele",
+		"lastName": "Puliti",
+		"age": 26,
+		"history": [
+			{
+				"disease": "cold",
+				"treatment": "001"
+			},
+			{
+				"disease": "headache",
+				"treatment": "023"
+			}
+		]
+	},
+	{
+		"firstName": "Dario",
+		"lastName": "Scida",
+		"age": 29,
+		"history": [
+			{
+				"disease": "stomachache",
+				"treatment": "025"
+			}
+		]
+	},
+	{
+		"firstName": "Andrea",
+		"lastName": "Amico",
+		"age": 29,
+		"history": [
+			{
+				"disease": "malignant herpes",
+				"treatment": "250"
+			}
+		]
+	}
+])
+----
+
+Output:
+[source,json]
+----
+{
+	"acknowledged" : true,
+	"insertedIds" : [
+		ObjectId("5d1330a5aa6a78bdbaf6df77"),
+		ObjectId("5d1330a5aa6a78bdbaf6df78"),
+		ObjectId("5d1330a5aa6a78bdbaf6df79")
+	]
+}
+----
+
+NOTE: This solve the second request
+
+One of the patients is set wrong in the DB, we need to change it using update:
+
+[source, mongo]
+----
+db.patient.updateOne(
+	{"_id" : ObjectId("5d1330a5aa6a78bdbaf6df79")},
+	{$set:
+		{
+			"firstName":"Andrew",
+			"lastName":"Friend",
+			"age": 58,
+			"history": [
+				{
+					"disease": "cough",
+					"treatment": "003"
+				},
+				{
+					"disease": "cold",
+					"treatment": "001"
+				}
+			]
+		}
+	}
+)
+----
+
+Output:
+[source, json]
+----
+{ "acknowledged" : true, "matchedCount" : 1, "modifiedCount" : 1 }
+----
+
+NOTE: This solve the third request
+
+To find all the patient that are older than 30 we need to use the find with the grater than condition:
+
+[source,mongo]
+----
+db.patient.find({"age":{$gt:30}}).pretty()
+----
+
+Output:
+[source,json]
+----
+{
+	"_id" : ObjectId("5d1330a5aa6a78bdbaf6df79"),
+	"firstName" : "Andrew",
+	"lastName" : "Friend",
+	"age" : 58,
+	"history" : [
+		{
+			"disease" : "cough",
+			"treatment" : "003"
+		},
+		{
+			"disease" : "cold",
+			"treatment" : "001"
+		}
+	]
+}
+----
+
+NOTE: This solve the fourth request
+
+The patients with cold can be discharged, it's necessary to remove from DB:
+
+[source,mongo]
+----
+db.patient.deleteMany({"history.disease":"cold"})
+----
+
+Output:
+[source,json]
+----
+{ "acknowledged" : true, "deletedCount" : 2 }
+----
+
+NOTE: This solve the last request
+
+=== Exercise 1
+
+.*Introduction*
+Create a blog database where store this data:
+
+* User
+** _id
+** name
+** age
+** email
+* Post
+** _id
+** title
+** text
+** tag
+* Comment
+** _id
+** text
+
+With realtionships like this:
+
+* User => create => Post
+* User => comment => Post
+
+.*Task*
+Model this datas
+
+.*Solution*
+Create three different collections it can be too much, we can nested the comments inside the post and refer it to a user using the _id reference:
+
+I think that the default schema can be this:
+
+.user
+[source,json]
+----
+{
+	_id: ObjectId(),
+	name: string,
+	age: number,
+	email: string
+}
+----
+
+.post
+[source,json]
+----
+{
+	_id: ObjectId(),
+	title: string,
+	text: string,
+	tag: [],
+	creator: user._id,
+	comments: [
+		{
+			_id=user._id,
+			text: string
+		},{
+			_id=user._id,
+			text: string
+		}]
+}
+----
+
+Let's create the database:
+
+[source,mongo]
+----
+use blog
+----
+
+Than create the users collections:
+
+[source,mongo]
+----
+db.users.insertMany([
+	{
+		name: 'Max Schwarzmueller',
+		age: 29,
+		email: 'max@test.com'
+	},{
+		name: 'Manuel Lorenz',
+		age: 30,
+		email:'manu@test.com'
+	}
+])
+----
+
+And now the post:
+
+[source,mongo]
+----
+db.posts.insertOne({
+	title: 'My first Post!',
+	text: 'This is my first post, I hope you like it!',
+	tag: ['new', 'tech'],
+	creator: ObjectId("5d1a1e280118327c0251e7a3"),
+	comments: [{
+		text: 'I like this post!',
+		author: ObjectId("5d1a1e280118327c0251e7a2")
+	}]
+})
+----
+
+To aggregate the users to the post we can do this:
+
+[source,mongo]
+----
+db.posts.aggregate([{$lookup: {from: 'users', localField: 'creator', foreignField: '_id', as:'autore'}}]).pretty()
+----
