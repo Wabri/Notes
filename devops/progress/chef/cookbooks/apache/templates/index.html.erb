@@ -1,0 +1,11 @@
+<html>
+      <body>
+            <h1>Hello <%= @name %>!</h1>
+            <div>HOSTNAME: <%= node['hostname'] %></div>
+            <div>IPADDRESS: <%= node['ipaddress'] %></div>
+            <div>CPU: <%= node['cpu']['0']['mhz'] %></div>
+            <div>MEMORY: <%= node['memory']['total'] %></div>
+            <img src="<%= @image %>">
+            <div>New line</div>
+      </body>
+</html>
