@@ -35,7 +35,7 @@ L'OpenStack project navigator permette di navigare i servizi che formano l'archi
 
 Sotto abbiamo un diagramma che spiega come i servizi siano collegati tra di loro:
 
-![Screenshot 2021-08-30 at 09.50.54.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/f82b6d70-6af2-4cfa-bb34-0280dd89398d/Screenshot_2021-08-30_at_09.50.54.png)
+![diagram](images/diagram.png)
 
 Per progettare, rilasciare e configurare OpenStack, gli amministratori devono capirne la logica della sua architettura.
 
@@ -90,7 +90,7 @@ Se necessario più storage possiamo aggiungere altri nodi di questo tipo tenendo
 
 Infine il nodo Object Storage contiene lo storage che i servizi usano per memorizzare accounts, containers e oggetti. Per questa funzionalità sono necessari almeno 2 nodi con un minimo di 1 interfaccia di rete, possiamo estendere se necessario il numero di nodi di questo tipo.
 
-![Screenshot 2021-08-30 at 12.39.55.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/e8eb6ea4-31dd-403b-9d11-dc0e5d218fc2/Screenshot_2021-08-30_at_12.39.55.png)
+![hardware.png](images/hardware.png)
 
 ## Networking
 
