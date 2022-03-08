@@ -1,0 +1,14 @@
+---
+- hosts: group1
+  name: Install and start apache service with https
+  vars_files:
+    - ../vault/vagrant-vault.yml
+  roles:
+    - role: '../roles/firewallStop'
+    - role: '../roles/permissiveSELinux'
+    - role: '../roles/apacheServer'
+      vars:
+          crt_path_src: ../../etc/ssl/certs/test.sourcesense.com.pem
+          key_path_src: ../../etc/ssl/private/test.sourcesense.com.key
+  become: yes
+

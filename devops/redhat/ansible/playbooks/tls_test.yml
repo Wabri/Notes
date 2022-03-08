@@ -1,0 +1,119 @@
+---
+- hosts: flask_haproxy
+  name: Create and manage flask backend web service using haproxy
+  become: yes
+  vars:
+    - container_name_base: flask
+    - container_name_1: "{{ container_name_base }}_1"
+    - container_name_2: "{{ container_name_base }}_2"
+  vars_files:
+    - ../vault/vagrant-vault.yml
+  roles:
+    - role: '../roles/firewallStop'
+    - role: '../roles/permissiveSELinux'
+  tasks:
+    - name: Install yum-utilities
+      package:
+        name=yum-utils
+        state=latest
+    - name: Add docker repository to package manager
+      command:  yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+    - name: Install docker
+      package:
+        name: "{{ package }}"
+        state: latest
+      when: restart_docker == "yes"
+      loop:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+    - name: Start docker deamon
+      service:
+        name: docker
+        state: started
+    - name: Build docker image
+      command: chdir=/srv/app docker build -t flask_backend --file=src/docker/python/Dockerfile .
+      when: restart_docker == "yes"
+    - name: Stop and remove docker flask containers
+      command: docker {{ command }} {{ container_name_1 }} {{ container_name_2 }}
+      ignore_errors: yes
+      loop:
+        - stop
+        - rm
+      when: restart_docker == "yes"
+    - name: Run Flask server
+      command: docker run -d -p {{ port }}:5000 --name {{ name }} -e APPID={{ id }} flask_backend
+      loop:
+        - { port: "5000", name: {{ container_name_1 }}, id: "1" }
+        - { port: "5001", name: {{ container_name_2 }}, id: "2" }
+      when: restart_docker == "yes"
+    - name: Install haproxy
+      package: 
+        name=haproxy
+        state=latest
+    - name: Configuring haproxy
+      copy:
+        src: ../../etc/haproxy/haproxy.cfg
+        dest: /etc/haproxy/haproxy.cfg
+        mode: 0444
+    - name: Create haproxy certificates directory 
+      file:
+        path=/etc/haproxy/certs
+        recurse=yes
+        state=directory
+        mode='700'
+    - name: Add certificates for tls https 
+      copy:
+        src: ../../etc/haproxy/certs/test.sourcesense.com.pem
+        dest: /etc/haproxy/certs/test.sourcesense.com.pem
+        mode: 0444
+    - name: Start haproxy deamon
+      service:
+        name: haproxy
+        state: started
+
+- hosts: apache_server
+  name: Create and manage web page with apache
+  become: yes
+  vars_files:
+    - ../vault/vagrant-vault.yml
+  roles:
+    - role: '../roles/firewallStop'
+    - role: '../roles/permissiveSELinux'
+  tasks:
+    - name: Setup apache server 
+      include_role:
+        name: '../roles/apacheServer'
+        vars:
+          crt_path_src: ../../etc/ssl/certs/test.sourcesense.com.pem
+          key_path_src: ../../etc/ssl/private/test.sourcesense.com.key
+    - name: Uncomment DocumentRoot variable on ssl.conf
+      command: sed -i 's/#DocumentRoot/DocumentRoot/' /etc/httpd/conf.d/ssl.conf
+    - name: Uncomment ServerName variable on ssl.conf
+      command: sed -i 's/#ServerName/ServerName/' /etc/httpd/conf.d/ssl.conf
+    - name: Update ServerName value on ssl.conf
+      command: sed -i 's/www.example.com/test.sourcesense.com/' /etc/httpd/conf.d/ssl.conf
+    - name: Disable SSLProtocol directive 
+      command: sed -i 's/^SSLProtocol/#SSLProtocol/' /etc/httpd/conf.d/ssl.conf
+    - name: Disable SSLCipherSuite directive 
+      command: sed -i 's/^SSLCipherSuite/#SSLCipherSuite/' /etc/httpd/conf.d/ssl.conf
+    - name: Change value SSLCertificateFile directive 
+      command: sed -i -E 's/\/etc\/pki\/tls\/certs\/localhost.crt/\/etc\/ssl\/certs\/test.sourcesense.com.pem/' /etc/httpd/conf.d/ssl.conf
+    - name: Change value SSLCertificateKeyFile directive 
+      command: sed -i -E 's/\/etc\/pki\/tls\/private\/localhost.key/\/etc\/ssl\/private\/test.sourcesense.com.key/' /etc/httpd/conf.d/ssl.conf
+    - name: Create html directory
+      file:
+        path=/var/www/html/test.sourcesense.com
+        recurse=yes
+        state=directory
+    - name: Copy html file
+      copy:
+        src: ../../src/html/
+        dest: /var/www/html/test.sourcesense.com/
+        mode: 0444
+    - name: Reload apache service
+      service: 
+        name: httpd 
+        state: reloaded
+        enabled: yes
+

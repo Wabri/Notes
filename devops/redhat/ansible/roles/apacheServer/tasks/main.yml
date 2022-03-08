@@ -1,0 +1,34 @@
+---
+# tasks file for apacheServer
+- name: Install openssl
+  package:
+    name=openssl
+    state=latest
+- name: Install mod_ssl
+  package:
+    name=mod_ssl
+    state=latest
+- name: Install apache
+  package:
+    name=httpd
+    state=latest
+- name: Create apache directory for certs
+  file:
+    path="{{ crt_path_dest }}"
+    recurse=yes
+    state=directory
+- name: Add certificates for tls https 
+  copy:
+    src: "{{ crt_path_src }}"
+    dest: "{{ crt_path_dest }}"
+    mode: 0444
+- name: Create apache directory for keys
+  file:
+    path="{{ key_path_dest }}"
+    recurse=yes
+    state=directory
+- name: Add key for tls https 
+  copy:
+    src: "{{ key_path_src }}"
+    dest: "{{ key_path_dest }}"
+    mode: 0444

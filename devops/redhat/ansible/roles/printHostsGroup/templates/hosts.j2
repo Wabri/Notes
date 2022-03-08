@@ -1,0 +1,4 @@
+This is the {{ inventory_hostname }} list of hosts
+{% for host in groups['group2'] %}
+{{ host }}
+{% endfor %}

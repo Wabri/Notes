@@ -1,0 +1,8 @@
+---
+- name: Check if var1 is set
+  fail: msg="[Error] This play requires 'var1'"
+  when: var1 is not defined
+- name: Generate confiuratio files
+  template: src=example.j2 dest=/home/vagrant/.bashrc.{{ item.hostname }}
+  when: var1 is defined and inventory_hostname == item.hostname 
+  with_items: "{{ elements }}"

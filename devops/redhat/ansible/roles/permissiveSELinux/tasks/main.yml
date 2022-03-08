@@ -1,0 +1,6 @@
+---
+# tasks file for permissiveSELinux
+- name: Put SELinux in permissive mode
+  ansible.posix.selinux:
+    policy: targeted
+    state: permissive

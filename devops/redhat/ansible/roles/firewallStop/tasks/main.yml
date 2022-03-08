@@ -1,0 +1,7 @@
+---
+# tasks file for firewallStop
+- name: Stop firewall deamon to prevent block port forewarding
+  service:
+    name: firewalld
+    state: stopped
+    enabled: no

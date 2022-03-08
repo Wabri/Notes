@@ -1,0 +1,100 @@
+---
+- hosts: gitlab_server
+  name: Install all dependencies and run gitlab on localhost
+  become: yes
+  vars:
+    - gitlab_external_site: "http://localhost"
+    - ansible_ssh_user: vagrant
+    - ansible_ssh_pass: vagrant
+  tasks:
+    - name: Install gitlab dependencies
+      package:
+        name: "{{ item }}"
+        state: latest
+      loop:
+        - redis
+        - postgresql
+        - curl
+        - policycoreutils
+        - openssh-server 
+        - perl
+    - name: Start sshd
+      service:
+        name: sshd
+        state: started
+    - name: Add firewall services
+      shell:
+        cmd: sudo firewall-cmd --permanent --add-service={{ item }}
+      loop:
+        - http
+        - https
+    - name: Restart firewalld
+      service:
+        name: firewalld
+        state: restarted
+    - name: Import gitlab-ce package
+      shell: 
+        cmd: curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.rpm.sh | sudo bash
+    - name: Install Gitlab-ce
+      shell:
+        cmd: sudo EXTERNAL_URL="{{ gitlab_external_site }}" dnf install -y gitlab-ce
+    - name: Get one time root password
+      shell:
+        cmd: sudo grep "^Password" /etc/gitlab/initial_root_password
+      register: one_time_root_pass
+    - name: Print one time root password
+      debug:
+        msg: Use this on first login with root - {{ one_time_root_pass['stdout_lines'][0] }}
+
+- hosts: jenkins_server
+  name: Install all dependencies and run jenkins on localhost
+  become: yes
+  vars:
+    - ansible_ssh_user: vagrant
+    - ansible_ssh_pass: vagrant
+  tasks:
+    - name: Import jenkins package
+      shell: |
+          sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat/jenkins.repo
+          sudo rpm --import https://pkg.jenkins.io/redhat/jenkins.io.key
+    - name: Install jenkins dependencies
+      package:
+        name: "{{ item }}"
+        state: latest
+      loop:
+        - epel-release
+        - java-11-openjdk-devel
+        - jenkins
+    - name: Start deamon-reload
+      shell: 
+        cmd: sudo systemctl daemon-reload
+    - name: Start jenkins
+      service:
+        name: jenkins
+        state: started
+    - name: Firewall exception for jenkins
+      shell: |
+        YOURPORT=8080
+        PERM="--permanent"
+        SERV="$PERM --service=jenkins"
+        
+        firewall-cmd $PERM --new-service=jenkins
+        firewall-cmd $SERV --set-short="Jenkins ports"
+        firewall-cmd $SERV --set-description="Jenkins port exceptions"
+        firewall-cmd $SERV --add-port=$YOURPORT/tcp
+        firewall-cmd $PERM --add-service=jenkins
+        firewall-cmd --zone=public --add-service=http --permanent
+        firewall-cmd --reload
+    - name: Wait jenkins startup
+      shell: |
+        while ! grep -m1 'Jenkins initial setup is required.' /var/log/jenkins/jenkins.log ; do
+          sleep 1
+        done
+    - name: Get unlock password
+      shell: |
+        sudo more /var/lib/jenkins/secrets/initialAdminPassword
+      register: unlock_password
+    - name: Print unlock password
+      debug:
+        msg: Use this to unlock jenkins - {{ unlock_password['stdout_lines'][0] }}
+

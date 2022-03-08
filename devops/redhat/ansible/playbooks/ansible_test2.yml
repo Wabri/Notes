@@ -1,0 +1,39 @@
+---
+- hosts: group2
+  name: Install git and clone a repo with vault secrets
+  become: yes
+  vars_files:
+    - ../vault/repository-vault.yml
+    - ../vault/vagrant-vault.yml
+  roles:
+    - ../roles/printHostsGroup
+  tasks:
+    - name: add get private ip address script
+      copy:
+        dest: /usr/bin/getprivateip.sh
+        src: ../scripts/getprivateip.sh
+        mode: '0111'
+    - name: Check ip address and register output
+      command: sudo getprivateip.sh
+      register: ip_address
+    - block:
+        - name: Create an unnecessary bashrc file
+          include_role:
+            name: ../roles/testjinja
+      ignore_errors: yes
+    - name: Get the day 
+      shell:
+        cmd: date | awk 'BEGIN{OFS=" "} {print $3}'
+      register: day
+    - name: Throw error if the day is even
+      fail: msg="[Error] This play cannot be use on even days"
+      when: day.stdout | int % 2 == 0
+    - name: Install git
+      package:
+        name=git
+        state=latest
+    - name: Clone repository using vault
+      git:
+        repo: https://{{ user }}:{{ password }}@{{ repo }}.git
+        dest: /opt/formazione
+      when: ip_address.stdout == "192.168.10.12"

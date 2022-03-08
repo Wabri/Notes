@@ -1,0 +1,31 @@
+# {{ ansible_managed }} 
+# 
+# This host is: {{ ansible_hostname }}
+# it's IP address is {{ ansible_all_ipv4_addresses }}
+# the OS is: {{ ansible_os_family }}
+# 
+# playbook variable: {{ var1 }}
+# 
+# Total Memory: {{ ansible_memtotal_mb }}
+# {% if ansible_memtotal_mb > 2000 %}
+# Memory is LARGE
+# {% else %}
+# Memory is SMALL
+# {% endif %}
+# 
+# {% for host in groups['all'] %}
+# {{ hostvars[host]['ansible_facts']['default_ipv4']['address'] }} {{ hostvars[host]['ansible_facts']['hostname'] }}
+# {{ host }}
+# {% endfor %}
+# 
+# 
+
+echo "Hello {{ item.hostname}}"
+
+{% if item.enableVi == true %}
+set -o vi
+{% endif %}
+
+# If exists print the hosts.txt file created by the printHostsGroup roles
+cat hosts.txt
+

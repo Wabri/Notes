@@ -1,0 +1,7 @@
+---
+elements:
+  - hostname: host2
+    enableVi: true
+
+  - hostname: host3
+    enableVi: false

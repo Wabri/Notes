@@ -1,0 +1,4 @@
+---
+# vars file for apacheServer
+crt_path_dest: /etc/ssl/certs
+key_path_dest: /etc/ssl/private
