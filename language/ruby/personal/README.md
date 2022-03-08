@@ -1,4 +1,4 @@
-# Chef/Ruby
+# Ruby
 
 ## Task Eseguiti
 
@@ -13,6 +13,3 @@
 - Fatto http request
 - Creato web server
 - Eseguiti test di integrazione e unitari con TDD E BDD
-- Imparato basi di Chef
-- Fatto tutorial su Kitchen 
-
