@@ -11,4 +11,74 @@ Si tratta di un linguaggio general-purpose, interpretato, dinamico, orientato ag
 - Object oriented: tutto è oggetto e può essere manipolato per creare e eseguire programmi.
 - interpretato: è possibile eseguire ruby senza compilare il codice.
 
+## Basics
+
+[helloworld.rb](helloworld.rb)
+
+
+##  ControlFlow
+
+[controlflow.rb](controlflow.rb)
+
+##  Collections
+
+[collections.rb](collections.rb)
+
+## Functions
+
+[function.rb](function.rb)
+
+## Classes
+
+[classes.rb](classes.rb)
+
+## Files
+
+[files.rb](files.rb)
+
+## Console
+
+[console.rb](console.rb)
+
+## Http Request
+
+[http.rb](http.rb)
+
+## Web Server
+
+[http_web_server.rb](http_web_server.rb)
+
+## Test
+
+### Unit per TDD
+
+[testing.rb](testing.rb)
+
+### Rspec per BDD
+
+Installare tramite `gem install rspec`, eseguire poi `rspec --init` nella directory dove si trova il codice.
+
+La classe da testare [hello.rb](hello.rb).
+
+Nella directory spec che viene create ci sarà [spec/hello_spec.rb](spec/hello_spec.rb).
+
+Eseguire i test con il comando `rspec spec/hello_spec.rb`.
+
+### Minitest per TDD e BDD
+
+Installare tramite `gem install minitest`.
+
+La classe da testare [hello.rb](hello.rb)
+
+Nella stessa directory della classe possiamo creare [hello_test.rb](hello_test.rb).
+
+Eseguire i test eseguendo direttamente questo file con i test.
+
+Per usare BDD creare un file chiamato [hello_spec.rb](hello_spec.rb).
+
+Eseguire i test eseguendo direttamente questo file.
+
+## Resources
+
+- [learn.chef.io](https://learn.chef.io/tracks)
 
