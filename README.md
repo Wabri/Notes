@@ -1,29 +1,36 @@
 # Notes
 
-Graph notes method to get my notes sorted.
-
 ```Tree
 .
-├── database
-│   └── nosql
-│       ├── document
-│       │   └── mongodb
-│       └── graph
-│           └── neo4j
+├── database_nosql
+│   ├── document_mongodb
+│   │   └── personal
+│   └── graph_neo4j
+│       └── personal
 ├── devops
-│   ├── hashicorp
-│   │   └── nomad
-│   ├── progress
-│   │   └── chef
-│   └── redhat
-│       └── openshift
+│   ├── ansible
+│   │   └── sourcesense
+│   ├── chef
+│   │   ├── sourcesense
+│   │   └── udemy
+│   ├── nomad
+│   │   └── personal
+│   └── openshift
+│       └── sourcesense
 ├── language
-│   ├── python
-│   │   └── library
-│   │       └── rasa
+│   ├── python_rasa
+│   │   └── personal
+│   ├── ruby
+│   │   └── personal
 │   └── typescript
+│       └── personal
+├── reti
+│   ├── https_letsencrypt
+│   │   └── sourcesense
+│   └── https_tls
+│       └── sourcesense
 └── tool
-    └── editor
-        └── vim
+    └── editor_vim
+        └── personal
 ```
 
