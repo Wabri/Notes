@@ -1,5 +1,7 @@
 # Notes
 
+Moved to [Wiki](https://github.com/Wabri/Wiki)
+
 ```Tree
 .
 ├── database_nosql
